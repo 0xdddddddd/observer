@@ -348,7 +348,11 @@ namespace test
         T callable;
     };
 
-    struct observer_base {};
+    class observer_base
+    {
+    public:
+        virtual ~observer_base() noexcept = default;
+    };
 
     template <typename R, typename... Types>
     class observer_impl : public observer_base
@@ -386,8 +390,9 @@ namespace test
     };
 
     template <typename T>
-    struct observer : public details::function_analysis<T, observer_impl>::type
+    class observer : public details::function_analysis<T, observer_impl>::type
     {
+    public:
         template <typename F>
         explicit observer(F&& val)
             : details::function_analysis<T, observer_impl>::type(std::forward<F>(val))
@@ -398,18 +403,15 @@ namespace test
     class binder
     {
     public:
-        explicit binder() = default;
-        virtual ~binder() = default;
-    public:
         template <typename F>
         inline void add(bind_type e, F&& val) noexcept
         {
             observers[static_cast<std::size_t>(e)] = std::make_unique<observer<typename details::function_traits_cvref<std::decay_t<F>>::type>>(std::forward<F>(val));
         }
 
-        inline void del(bind_type e) noexcept
+        inline void del(bind_type e)
         {
-            observers[static_cast<std::size_t>(e)] = {};
+            observers[static_cast<std::size_t>(e)] = nullptr;
         }
 
         template <typename R = void, typename... Types>
